@@ -46,19 +46,22 @@ unsafe fn update_title(hwnd: HWND) {
 	if INPUTBOX == 0 {
 		return;
 	}
-	let mut len = GetWindowTextLengthW(INPUTBOX as HWND);
-	OFFSET %= len;
-	let mut buffer = Vec::with_capacity(len as usize + 1);
-	len = GetWindowTextW(INPUTBOX as HWND, buffer.as_mut_ptr(), len + 1);
-	buffer.set_len(len as usize);
-	buffer.rotate_left(OFFSET as usize);
-	buffer.set_len(
+	let mut buffer_len = GetWindowTextLengthW(INPUTBOX as HWND);
+	let mut buffer = Vec::with_capacity(buffer_len as usize + 1);
+	buffer_len = GetWindowTextW(INPUTBOX as HWND, buffer.as_mut_ptr(), buffer_len + 1);
+	buffer.set_len(buffer_len as usize);
+	let mut chars = String::from_utf16(&buffer).unwrap().chars().collect::<Vec<char>>();
+	OFFSET %= chars.len().max(1) as i32;
+	chars.rotate_left(OFFSET as usize);
+
+	buffer = chars.iter().take(
 		if TRUNCATION_AMOUNT == TRUNCATION_MAX {
-			i32::MAX
+			usize::MAX
 		} else {
-			TRUNCATION_AMOUNT as i32
-		}.min(len) as usize
-	);
+			TRUNCATION_AMOUNT as usize
+		}.min(chars.len())
+	).collect::<String>().convert();
+
 	buffer.push(0);
 	validate_bool(
 		SetWindowTextW(hwnd, buffer.as_ptr()),
@@ -158,7 +161,7 @@ fn main() {
 			), "creating the window",
 		);
 
-		INPUTBOX = create_input_box(MARGIN, "Window Title", hwnd, win.hInstance);
+		INPUTBOX = create_input_box(MARGIN, "Window Title", hwnd, win.hInstance, INPUTBOX_ID);
 
 		TRUNCATION_LABEL = create_label(TEXT_HEIGHT + MARGIN, hwnd, win.hInstance);
 		TRUNCATION = create_slider(

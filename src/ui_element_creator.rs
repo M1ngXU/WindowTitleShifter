@@ -2,7 +2,7 @@ use std::ptr::null_mut;
 
 use winapi::ctypes::c_int;
 use winapi::shared::minwindef::HINSTANCE;
-use winapi::shared::windef::HWND;
+use winapi::shared::windef::{HMENU, HWND};
 use winapi::um::commctrl::{
 	TBM_SETPOS, TBM_SETRANGEMAX, TBM_SETRANGEMIN,
 	TBS_AUTOTICKS, TRACKBAR_CLASS, WC_EDIT, WC_STATIC,
@@ -77,6 +77,7 @@ pub(crate) unsafe fn create_input_box(
 	starting_text: &str,
 	parent: HWND,
 	h_instance: HINSTANCE,
+	id: u16
 ) -> isize {
 	validate_hwnd(
 		CreateWindowExW(
@@ -89,7 +90,7 @@ pub(crate) unsafe fn create_input_box(
 			UI_STARTING_WIDTH,
 			TEXT_HEIGHT,
 			parent,
-			null_mut(),
+			id as HMENU,
 			h_instance,
 			null_mut(),
 		), "creating a input box",
